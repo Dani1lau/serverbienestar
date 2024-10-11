@@ -2,11 +2,23 @@ import { DataTypes, INTEGER, Model } from "sequelize";
 import { sequelize } from "../config/db.js";
 
 class Ficha extends Model {
+
   static async createFicha(ficha) {
     try {
-      return await this.create(ficha);
+      // Llamar al procedimiento almacenado con los parámetros necesarios
+      const [result] = await sequelize.query(
+        "CALL crearFicha(:numero_Ficha, :cordinacion_Ficha, :especialidad_Ficha)",
+        {
+          replacements: {
+            numero_Ficha: ficha.numero_Ficha,
+            cordinacion_Ficha: ficha.cordinacion_Ficha,
+            especialidad_Ficha: ficha.especialidad_Ficha,
+          },
+        }
+      );
+      return result; // Retorna el resultado del procedimiento almacenado
     } catch (error) {
-      console.error(`error al crear ficha: ${error}`);
+      console.error(`Error al crear ficha: ${error}`);
       throw error;
     }
   }
@@ -29,20 +41,25 @@ class Ficha extends Model {
     }
   }
 
-
   static async updateFicha(numero_Ficha, update_ficha) {
     try {
-        const ficha = await this.findByPk(numero_Ficha); // Asegúrate de que estás usando numero_Ficha aquí
-        if (!ficha) {
-            throw new Error('Ficha no encontrada');
-        }
-        return await ficha.update(update_ficha);
+      // Buscar la ficha por su número
+      const ficha = await this.findByPk(numero_Ficha);
+      
+      // Verificar si la ficha existe
+      if (!ficha) {
+        throw new Error("Ficha no encontrada");
+      }
+  
+      // Actualizar los campos de la ficha
+      const updatedFicha = await ficha.update(update_ficha);
+  
+      return updatedFicha; // Retornar la ficha actualizada
     } catch (error) {
-        console.error(`error no se actualizó la ficha: ${error}`);
-        throw error;
+      console.error(`Error al actualizar la ficha: ${error}`);
+      throw error;
     }
   }
-
 
   static async eliminarFicha(numero_Ficha) {
     try {
@@ -53,13 +70,13 @@ class Ficha extends Model {
       throw error;
     }
   }
-
 }
 
 Ficha.init(
   {
     numero_Ficha: { type: DataTypes.INTEGER, primaryKey: true },
     cordinacion_Ficha: { type: DataTypes.STRING(40), allowNull: false },
+    especialidad_Ficha: { type: DataTypes.STRING(80), allowNull: false },
   },
   {
     sequelize,

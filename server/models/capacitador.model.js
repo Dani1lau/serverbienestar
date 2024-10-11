@@ -47,7 +47,7 @@ Capacitador.init(
     nombre_Capac: { type: DataTypes.STRING(40), allowNull: false },
     apellidos_Capac: { type: DataTypes.STRING(45), allowNull: false },
     tipodoc_Capac: {type: DataTypes.ENUM('CC', 'CE', 'NIT', 'PEP'), allowNull: false },
-    documento_Capac:  { type: DataTypes.INTEGER, allowNull: false },
+    documento_Capac:  { type: DataTypes.INTEGER, allowNull: false, unique: true },
     genero_Capac: {type: DataTypes.ENUM('Masculino', 'Femenino'), allowNull: false },
     id_Usua1FK: { type: DataTypes.INTEGER, allowNull: false },
   },

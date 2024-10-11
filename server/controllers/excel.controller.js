@@ -26,10 +26,12 @@ class ExcelController {
         // Mapeo flexible de las columnas
         const numeroFichaKey = row.numero_Ficha || row.Ficha;
         const cordinacionFichaKey = row.cordinacion_Ficha || row.Coordinación;
+        const especialidadFichaKey = row.especialidad_Ficha || row.Especialidad;
 
         return {
           numero_Ficha: numeroFichaKey,
           cordinacion_Ficha: cordinacionFichaKey,
+          especialidad_Ficha: especialidadFichaKey,
         };
       });
 
@@ -40,6 +42,7 @@ class ExcelController {
       res.status(500).json({ message: "Error al cargar las fichas" });
     }
   }
+
   static async cargarTalleres(req, res) {
     try {
       const filePath = req.file.path;
@@ -81,123 +84,123 @@ class ExcelController {
   static async cargarUsuarios(req, res) {
     let transaction;
     try {
-        const filePath = req.file.path;
-        const workbook = XLSX.readFile(filePath);
-        const sheetName = workbook.SheetNames[0];
-        const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+      const filePath = req.file.path;
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-        transaction = await Usuario.sequelize.transaction(); // Inicializar la transacción
+      transaction = await Usuario.sequelize.transaction(); // Inicializar la transacción
 
-        // Mapeo de roles
-        const rolesMap = {
-            Administrador: 1,
-            Capacitador: 3,
-            Instructor: 2,
-            Profesional: 3,
-        };
+      // Mapeo de roles
+      const rolesMap = {
+        Administrador: 1,
+        Capacitador: 3,
+        Instructor: 2,
+        Profesional: 3,
+      };
 
-        for (const row of sheetData) {
-            console.log("Fila actual:", row); // Imprimir fila actual
-            const correo = row.correo || row.Email;
-            const rolNombre = row.rol || row.Rol; // Obtener el nombre del rol
-            const rol = rolesMap[rolNombre]; // Mapear el nombre del rol a su ID
-            const nombre = row.nombre || row.Nombre;
-            const apellido = row.apellido || row.Apellido;
-            const tipoDocumento = row["tipo documento"] || row["Tipo Documento"];
-            const documento = row.documento || row.Documento;
-            const genero = row.genero || row.Género || "No especificado"; // Valor predeterminado
+      for (const row of sheetData) {
+        console.log("Fila actual:", row); // Imprimir fila actual
+        const correo = row.correo || row.Email;
+        const rolNombre = row.rol || row.Rol; // Obtener el nombre del rol
+        const rol = rolesMap[rolNombre]; // Mapear el nombre del rol a su ID
+        const nombre = row.nombre || row.Nombre;
+        const apellido = row.apellido || row.Apellido;
+        const tipoDocumento = row["tipo documento"] || row["Tipo Documento"];
+        const documento = row.documento || row.Documento;
+        const genero = row.genero || row.Género || "No especificado"; // Valor predeterminado
 
-            // Validar campos obligatorios
-            if (!correo || rol === undefined) {
-                throw new Error("Correo y rol son requeridos.");
-            }
+        // Validar campos obligatorios
+        if (!correo || rol === undefined) {
+          throw new Error("Correo y rol son requeridos.");
+        }
 
-            // Generar una clave aleatoria
-            const claveGenerada = crypto.randomBytes(8).toString("hex");
+        // Generar una clave aleatoria
+        const claveGenerada = crypto.randomBytes(8).toString("hex");
 
-            // Encriptar la clave generada
-            const hashedPass = await bcrypt.hash(claveGenerada, 10);
+        // Encriptar la clave generada
+        const hashedPass = await bcrypt.hash(claveGenerada, 10);
 
-            const nuevoUsuario = await Usuario.create(
-                {
-                    correo_Usua: correo,
-                    clave_Usua: hashedPass, // Clave encriptada
-                    id_Rol1FK: rol,
-                },
-                { transaction }
-            );
+        const nuevoUsuario = await Usuario.create(
+          {
+            correo_Usua: correo,
+            clave_Usua: hashedPass, // Clave encriptada
+            id_Rol1FK: rol,
+          },
+          { transaction }
+        );
 
-            // Crear datos específicos según el rol
-            if (rol === 1) {
-                // Administrador
-                if (!nombre || !apellido || !tipoDocumento || !documento) {
-                    throw new Error("Faltan datos para crear un Administrador");
-                }
-                await Administrador.create(
-                    {
-                        nombre_Admin: nombre,
-                        apellido_Admin: apellido,
-                        tipodoc_Admin: tipoDocumento,
-                        documento_Admin: documento,
-                        genero_Admin: genero,
-                        id_Usua2FK: nuevoUsuario.id_Usua,
-                    },
-                    { transaction }
-                );
-            } else if (rol === 2) {
-                // Instructor
-                if (!nombre || !apellido || !tipoDocumento || !documento) {
-                    throw new Error("Faltan datos para crear un Instructor");
-                }
-                await Instructor.create(
-                    {
-                        nombre_Instruc: nombre,
-                        apellido_Instruc: apellido,
-                        tipodoc_Instruc: tipoDocumento,
-                        documento_Instruc: documento,
-                        genero_Instruc: genero,
-                        id_Usua3FK: nuevoUsuario.id_Usua,
-                    },
-                    { transaction }
-                );
-            } else if (rol === 3) {
-                // Capacitador
-                if (!nombre || !apellido || !tipoDocumento || !documento) {
-                    throw new Error("Faltan datos para crear un Capacitador");
-                }
-                await Capacitador.create(
-                    {
-                        nombre_Capac: nombre,
-                        apellidos_Capac: apellido,
-                        tipodoc_Capac: tipoDocumento,
-                        documento_Capac: documento,
-                        genero_Capac: genero,
-                        id_Usua1FK: nuevoUsuario.id_Usua,
-                    },
-                    { transaction }
-                );
-            }
+        // Crear datos específicos según el rol
+        if (rol === 1) {
+          // Administrador
+          if (!nombre || !apellido || !tipoDocumento || !documento) {
+            throw new Error("Faltan datos para crear un Administrador");
+          }
+          await Administrador.create(
+            {
+              nombre_Admin: nombre,
+              apellido_Admin: apellido,
+              tipodoc_Admin: tipoDocumento,
+              documento_Admin: documento,
+              genero_Admin: genero,
+              id_Usua2FK: nuevoUsuario.id_Usua,
+            },
+            { transaction }
+          );
+        } else if (rol === 2) {
+          // Instructor
+          if (!nombre || !apellido || !tipoDocumento || !documento) {
+            throw new Error("Faltan datos para crear un Instructor");
+          }
+          await Instructor.create(
+            {
+              nombre_Instruc: nombre,
+              apellido_Instruc: apellido,
+              tipodoc_Instruc: tipoDocumento,
+              documento_Instruc: documento,
+              genero_Instruc: genero,
+              id_Usua3FK: nuevoUsuario.id_Usua,
+            },
+            { transaction }
+          );
+        } else if (rol === 3) {
+          // Capacitador
+          if (!nombre || !apellido || !tipoDocumento || !documento) {
+            throw new Error("Faltan datos para crear un Capacitador");
+          }
+          await Capacitador.create(
+            {
+              nombre_Capac: nombre,
+              apellidos_Capac: apellido,
+              tipodoc_Capac: tipoDocumento,
+              documento_Capac: documento,
+              genero_Capac: genero,
+              id_Usua1FK: nuevoUsuario.id_Usua,
+            },
+            { transaction }
+          );
+        }
 
-            // Enviar el correo con la clave generada
-            const transporter = nodemailer.createTransport({
-                service: "gmail",
-                auth: {
-                    user: process.env.GMAIL_USER = "soydanielra@gmail.com",
-                    pass: process.env.GMAIL_PASS = "abgo fbls snjb pmuj",
-                },
-                tls: {
-                    rejectUnauthorized: false,
-                },
-            });
+        // Enviar el correo con la clave generada
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
+            pass: (process.env.GMAIL_PASS = "abgo fbls snjb pmuj"),
+          },
+          tls: {
+            rejectUnauthorized: false,
+          },
+        });
 
-            const __filename = fileURLToPath(import.meta.url);
-            const __dirname = dirname(__filename);
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
 
-            const mailOptions = {
-                from: process.env.GMAIL_USER = "soydanielra@gmail.com",
-                to: correo,
-                subject: "Bienvenido a la plataforma",
-                html: `
+        const mailOptions = {
+          from: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
+          to: correo,
+          subject: "Bienvenido a la plataforma",
+          html: `
                   <div style="font-family: Arial, sans-serif; text-align: center;">
                     <img src="cid:logoSena" alt="Logo SENA" style="width: 150px; margin-bottom: 20px; border-radius:100px;">
                     <h1 style="color: #1e3799;">¡Bienvenido a la Plataforma!</h1>
@@ -215,32 +218,35 @@ class ExcelController {
                     <img src="cid:logoBienestar" alt="Logo Bienestar" style="width: 150px; margin-top: 20px;">
                   </div>
                 `,
-                attachments: [
-                    {
-                        filename: "logo.png",
-                        path: __dirname + "/../assets/images/logo.png", // Cambiar la ruta a relativa o absoluta
-                        cid: "logoSena", // cid para referenciar en el HTML
-                    },
-                    {
-                        filename: "Logo de Bienestar.png",
-                        path: __dirname + "/../assets/images/Logo de Bienestar.png", // Ruta correcta
-                        cid: "logoBienestar", // cid para referenciar en el HTML
-                    },
-                ],
-            };
+          attachments: [
+            {
+              filename: "logo.png",
+              path: __dirname + "/../assets/images/logo.png", // Cambiar la ruta a relativa o absoluta
+              cid: "logoSena", // cid para referenciar en el HTML
+            },
+            {
+              filename: "Logo de Bienestar.png",
+              path: __dirname + "/../assets/images/Logo de Bienestar.png", // Ruta correcta
+              cid: "logoBienestar", // cid para referenciar en el HTML
+            },
+          ],
+        };
 
-            await transporter.sendMail(mailOptions);
-        }
+        await transporter.sendMail(mailOptions);
+      }
 
-        await transaction.commit();
-        res.status(201).json({ message: "Usuarios cargados y correos enviados con éxito" });
+      await transaction.commit();
+      res
+        .status(201)
+        .json({ message: "Usuarios cargados y correos enviados con éxito" });
     } catch (error) {
-        if (transaction) await transaction.rollback();
-        console.error("Error al cargar los usuarios:", error);
-        res.status(500).json({ message: "Error al cargar los usuarios: " + error.message });
+      if (transaction) await transaction.rollback();
+      console.error("Error al cargar los usuarios:", error);
+      res
+        .status(500)
+        .json({ message: "Error al cargar los usuarios: " + error.message });
     }
-}
-
+  }
 
   static async obtenerInstructor(instructorNombre) {
     const instructorNombres = instructorNombre

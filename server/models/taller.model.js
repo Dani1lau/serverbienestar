@@ -11,6 +11,20 @@ class Taller extends Model {
     }
   }
 
+
+  static async getTiposDeTalleres() {
+    try {
+        // Llamada al procedimiento almacenado
+        const tiposDeTalleres = await sequelize.query(
+            "CALL GetTiposDeTalleres()"
+        );
+        return tiposDeTalleres;
+    } catch (error) {
+        throw new Error("Error al obtener tipos de talleres: " + error);
+    }
+}
+
+
   static async getTallerPorNombre(nombreTaller) {
     try {
         const [result] = await db.query('CALL ObtenerTallerPorNombre(?)', [nombreTaller]);

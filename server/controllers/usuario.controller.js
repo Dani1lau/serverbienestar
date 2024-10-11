@@ -166,8 +166,8 @@ class UsuarioController {
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-          user: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
-          pass: (process.env.GMAIL_PASS = "abgo fbls snjb pmuj"),
+          user: process.env.GMAIL_USER="soydanielra@gmail.com",
+          pass: process.env.GMAIL_PASS="abgo fbls snjb pmuj",
         },
         tls: {
           rejectUnauthorized: false,
@@ -179,7 +179,7 @@ class UsuarioController {
 
       // Configurar el contenido del correo
       const mailOptions = {
-        from: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
+        from: process.env.GMAIL_USER="soydanielra@gmail.com",
         to: correo,
         subject: "Bienvenido a la plataforma",
         html: `
@@ -222,6 +222,12 @@ class UsuarioController {
         .json({ message: "Usuario creado correctamente y correo enviado." });
     } catch (error) {
       console.error("Error al registrar el usuario:", error);
+      if (
+        error.message.includes("El correo ya está registrado") ||
+        error.message.includes("El documento ya está registrado")
+      ) {
+        return res.status(400).json({ message: error.message }); // Respuesta específica para errores de duplicado
+      }
       res
         .status(500)
         .json({ message: "Error al registrar el usuario: " + error.message });

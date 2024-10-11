@@ -42,8 +42,14 @@ class Usuario extends Model {
       console.log("Clave generada:", claveGenerada); // Mostrar la clave generada
       return claveGenerada; // Retornar la clave generada en texto plano para enviar por correo
     } catch (error) {
-      console.error("Error al registrar el usuario:", error);
-      throw error;
+      if (error.original && error.original.sqlState === "45000") {
+        // Manejar el error de duplicado
+        console.error("Error de duplicado:", error.original.message);
+        throw new Error(error.original.message); // Lanza el mensaje de error específico
+      } else {
+        console.error("Error al registrar el usuario:", error);
+        throw error; // Lanzar otros errores
+      }
     }
   }
 
@@ -238,7 +244,7 @@ Usuario.init(
   {
     id_Usua: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     correo_Usua: { type: DataTypes.STRING(35), allowNull: false },
-    clave_Usua: { type: DataTypes.TEXT, allowNull: false },
+    clave_Usua: { type: DataTypes.TEXT, allowNull: false, unique: true },
     estado_Usua: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

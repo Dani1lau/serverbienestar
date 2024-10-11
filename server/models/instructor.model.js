@@ -47,7 +47,7 @@ Instructor.init(
     nombre_Instruc: { type: DataTypes.STRING(50), allowNull: false },
     apellido_Instruc: { type: DataTypes.STRING(40), allowNull: false },
     tipodoc_Instruc: {type: DataTypes.ENUM('CC', 'CE', 'NIT', 'PEP'), allowNull: false },
-    documento_Instruc:  { type: DataTypes.INTEGER, allowNull: false },
+    documento_Instruc:  { type: DataTypes.INTEGER, allowNull: false, unique: true },
     genero_Instruc: {type: DataTypes.ENUM('Masculino', 'Femenino'), allowNull: false },
     id_Usua3FK: { type: DataTypes.INTEGER, allowNull: false },
   },

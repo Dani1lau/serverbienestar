@@ -1,6 +1,6 @@
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 // Crear la carpeta uploads si no existe
 const createUploadsFolder = (uploadsFolder) => {
@@ -11,7 +11,7 @@ const createUploadsFolder = (uploadsFolder) => {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadsFolder = path.resolve('uploads/'); 
+    const uploadsFolder = path.resolve("uploads/");
     createUploadsFolder(uploadsFolder); // Asegurarse de que la carpeta exista
     console.log("Archivo recibido:", file);
     cb(null, uploadsFolder); // Carpeta donde se almacenan los archivos
@@ -24,16 +24,16 @@ const storage = multer.diskStorage({
 // Filtro para permitir solo archivos Excel
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname);
-  if (ext !== '.xlsx' && ext !== '.xls') {
-    return cb(new Error('Solo se permiten archivos Excel'));
+  if (ext !== ".xlsx" && ext !== ".xls") {
+    return cb(new Error("Solo se permiten archivos Excel"));
   }
   cb(null, true);
 };
 
 // Inicializar multer
-const upload = multer({ 
-  storage, 
-  fileFilter 
+const upload = multer({
+  storage,
+  fileFilter,
 });
 
 export default upload;

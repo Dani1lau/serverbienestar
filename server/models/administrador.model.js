@@ -50,7 +50,7 @@ Administrador.init(
     nombre_Admin: { type: DataTypes.STRING(50), allowNull: false },
     apellido_Admin: { type: DataTypes.STRING(40), allowNull: false },
     tipodoc_Admin: {type: DataTypes.ENUM('CC', 'CE', 'NIT', 'PEP'), allowNull: false },
-    documento_Admin:  { type: DataTypes.INTEGER, allowNull: false },
+    documento_Admin:  { type: DataTypes.INTEGER, allowNull: false, unique: true },
     genero_Admin: {type: DataTypes.ENUM('Masculino', 'Femenino'), allowNull: false },
     id_Usua2FK: { type: DataTypes.INTEGER, allowNull: false },
   },

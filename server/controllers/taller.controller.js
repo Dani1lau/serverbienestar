@@ -10,6 +10,17 @@ class TallerController {
         }
     }   
 
+    static async getTiposDeTalleres(req, res) {
+        try {
+            // Llamada al método que usa el procedimiento almacenado
+            const tiposDeTalleres = await Taller.getTiposDeTalleres();
+            res.status(200).json(tiposDeTalleres);
+        } catch (error) {
+            // Enviar el error detallado en la respuesta
+            res.status(500).json({ message: "Error al obtener tipos de talleres: " + error.message });
+        }
+    }
+
     static async getTaller(req, res){
         try {
             const id = req.params.id;

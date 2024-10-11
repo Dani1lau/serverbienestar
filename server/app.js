@@ -10,7 +10,7 @@ import RolRouter  from './routes/rol.routes.js';
 import TallerRoutes   from './routes/taller.routes.js';
 import DisponibilidadBienestarRoutes  from './routes/disponibilidad_bienestar.routes.js';
 import ProgramacionCapaTallerRoutes from './routes/programacion_capa_taller.routes.js';
-import ExcelRoutes from './routes/excel.routes.js';
+import ExcelRoutes from './routes/excelImg.routes.js';
 import AutenticacionRoutes from './routes/autenticacion.routes.js';
 
 const app = express();
