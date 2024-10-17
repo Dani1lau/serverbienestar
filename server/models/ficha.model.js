@@ -41,6 +41,17 @@ class Ficha extends Model {
     }
   }
 
+  static async getAllCoordinaciones() {
+    try {
+      const [results, metadata] = await sequelize.query('SELECT DISTINCT cordinacion_Ficha FROM Ficha');
+      return results; // Devuelve los resultados de la consulta
+    } catch (error) {
+      console.error(`Error al obtener las coordinaciones: ${error}`);
+      throw error;
+    }
+  }
+  
+
   static async updateFicha(numero_Ficha, update_ficha) {
     try {
       // Buscar la ficha por su número

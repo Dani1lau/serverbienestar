@@ -8,5 +8,6 @@ router.get( '/api/ficha/:id',  FichaController.getFicha )
 router.put( '/api/ficha/:numero_Ficha',  FichaController.UpdateFicha )
 router.post( '/api/ficha',  FichaController.postFicha )
 router.delete( '/api/ficha/:numero_Ficha',  FichaController.deleteFicha )
+router.get('/api/coordinaciones', FichaController.getCoordinaciones)
 
 export default router;     

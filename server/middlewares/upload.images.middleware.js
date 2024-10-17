@@ -1,41 +1,25 @@
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+// Importar módulos usando "import"
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinary from 'cloudinary';
+import multer from 'multer';
 
-// Crear la carpeta para imágenes si no existe
-const createImagesFolder = (imagesFolder) => {
-  if (!fs.existsSync(imagesFolder)) {
-    fs.mkdirSync(imagesFolder, { recursive: true });
-  }
-};
+// Configuración de Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-
-// Configuración para imágenes
-const imageStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const imagesFolder = path.resolve('uploads/images/');
-    createImagesFolder(imagesFolder); // Crear la carpeta de imágenes si no existe
-    cb(null, imagesFolder);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`); // Asignar un nombre único a las imágenes
+// Configuración de multer con CloudinaryStorage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary.v2,
+  params: {
+    folder: 'horarios',
+    allowed_formats: ['jpg', 'png', 'jpeg'],
   },
 });
 
-// Filtro para permitir solo archivos de imagen
-const imageFileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png/;
-  const ext = path.extname(file.originalname).toLowerCase();
-  if (!allowedTypes.test(ext)) {
-    return cb(new Error('Solo se permiten archivos de imagen (jpeg, jpg, png)'));
-  }
-  cb(null, true);
-};
-
-// Inicializar multer para imágenes
-const imageUpload = multer({
-  storage: imageStorage,
-  fileFilter: imageFileFilter,
-});
+// Middleware de multer para subir imágenes
+const imageUpload = multer({ storage });
 
 export default imageUpload;

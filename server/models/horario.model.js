@@ -11,6 +11,31 @@ class Horario extends Model {
     }
   }
 
+  static async obtenerHorariosPorFichaYCoordinacion(numero_Ficha, cordinacion_Ficha) {
+    try {
+      // Ejecutar el procedimiento almacenado
+      const resultado = await sequelize.query(
+        `CALL ObtenerHorariosPorFichaYCoordinacion(:numero_Ficha, :cordinacion_Ficha)`, 
+        {
+          replacements: { numero_Ficha, cordinacion_Ficha },
+          type: sequelize.QueryTypes.SELECT
+        }
+      );
+  
+      // Limpiar la respuesta para que solo devuelva el primer objeto con los datos
+      if (resultado.length > 0 && resultado[0]) {
+        // Aquí seleccionamos solo el primer objeto del array (los datos del horario)
+        return resultado[0];
+      }
+  
+      return null;
+    } catch (error) {
+      console.error(`Error al obtener horarios: ${error}`);
+      throw error;
+    }
+  }
+
+
   static async getHorarios() {
     try {
       return await this.findAll();

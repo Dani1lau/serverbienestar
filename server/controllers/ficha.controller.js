@@ -25,6 +25,22 @@ class FichaController {
     }
   }
 
+  static async getCoordinaciones(req, res) {
+    try {
+      const coordinaciones = await Ficha.getAllCoordinaciones();
+      
+      // Verificamos si hay resultados y devolvemos una respuesta
+      if (coordinaciones.length > 0) {
+        res.status(200).json(coordinaciones);
+      } else {
+        res.status(404).json({ message: "No se encontraron coordinaciones." });
+      }
+    } catch (error) {
+      console.error(`Error al obtener las coordinaciones: ${error}`);
+      res.status(500).json({ message: "Error al obtener las coordinaciones: " + error });
+    }
+  }  
+
   static async UpdateFicha(req, res) {
     try {
       const numero_Ficha = req.params.numero_Ficha; // Asumiendo que pasas el número de ficha en los parámetros
