@@ -61,11 +61,14 @@ class ProgramacionCapaTallerController {
   static async getProgramacionesCT(req, res) {
     try {
       const results = await ProgramacionCapaTaller.getProgramacionesCT();
-      console.log("Resultados del procedimiento:", JSON.stringify(results, null, 2)); // Detalle de resultados
-      
+      console.log(
+        "Resultados del procedimiento:",
+        JSON.stringify(results, null, 2)
+      ); // Detalle de resultados
+
       // Convertir el objeto en un array
       const programacionesCT = Object.values(results[0]); // Asumiendo que el primer elemento es el objeto que contiene las programaciones
-      
+
       if (Array.isArray(programacionesCT) && programacionesCT.length > 0) {
         res.status(200).json(programacionesCT);
       } else {
@@ -77,7 +80,6 @@ class ProgramacionCapaTallerController {
       });
     }
   }
-
 
   static async getProgramacionCT(req, res) {
     try {
@@ -114,14 +116,19 @@ class ProgramacionCapaTallerController {
       // Validación de datos
       for (const key in update_programacionCT) {
         if (!update_programacionCT[key]) {
-          return res.status(400).json({ message: "Todos los campos son obligatorios." });
+          return res
+            .status(400)
+            .json({ message: "Todos los campos son obligatorios." });
         }
       }
 
       const id_procaptall = req.params.id;
 
       // Actualizar la programación
-      await ProgramacionCapaTaller.updateProgramacionCT(id_procaptall, update_programacionCT);
+      await ProgramacionCapaTaller.updateProgramacionCT(
+        id_procaptall,
+        update_programacionCT
+      );
       res.status(200).json({ message: "Programación actualizada con éxito" });
     } catch (error) {
       console.error(`Error al actualizar la programación: ${error.message}`);
@@ -130,7 +137,6 @@ class ProgramacionCapaTallerController {
       });
     }
   }
-
 
   static async postProgramacionCT(req, res) {
     try {
@@ -145,8 +151,9 @@ class ProgramacionCapaTallerController {
         nombreTaller: req.body.nombreTaller, // Nombre del taller
         nombreCapacitador: req.body.nombreCapacitador, // Nombre completo del capacitador
         numero_FichaFK: req.body.numero_FichaFK,
+        nombreInstructor: req.body.nombreInstructor // Nombre completo del instructor
       };
-
+  
       // Validación de datos (opcional)
       if (
         !pct.sede_procaptall ||
@@ -157,16 +164,17 @@ class ProgramacionCapaTallerController {
         !pct.horaFin_procaptall ||
         !pct.nombreTaller ||
         !pct.nombreCapacitador ||
-        !pct.numero_FichaFK
+        !pct.numero_FichaFK ||
+        !pct.nombreInstructor // Se agrega la validación del nombre del instructor
       ) {
         return res
           .status(400)
           .json({ message: "Todos los campos son obligatorios." });
       }
-
+  
       // Llamamos al modelo para crear la programación
       await ProgramacionCapaTaller.createProgramacionCT(pct);
-
+  
       // Respuesta exitosa
       res.status(201).json({ message: "Programación creada con éxito" });
     } catch (error) {
@@ -177,6 +185,7 @@ class ProgramacionCapaTallerController {
         .json({ message: "Error al crear la programación: " + error.message });
     }
   }
+
 
   static async deleteProgramacionCT(req, res) {
     try {

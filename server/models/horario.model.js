@@ -35,48 +35,52 @@ class Horario extends Model {
     }
   }
 
-
-  static async getHorarios() {
-    try {
-      return await this.findAll();
-    } catch (error) {
-      console.error(`Error al encontrar los horarios: ${error}`);
-      throw error;
-    }
-  }
-
-  static async getHorario(id) {
-    try {
-      return await this.findByPk(id);
-    } catch (error) {
-      console.error(`Error al encontrar el horario: ${error}`);
-      throw error;
-    }
-  }
-
-  static async updateHorario(id, update_horario) {
-    try {
-      const horario = await this.findByPk(id);
-      return horario.update(update_horario);
-    } catch (error) {
-      console.error(`Error al actualizar el horario: ${error}`);
-      throw error;
-    }
-  }
-
-  static async deleteHorario(id) {
-    try {
-      const horario = await this.findByPk(id);
-      if (horario) {
-        await horario.destroy();
-        return horario;
+    // Método para eliminar un horario
+    static async eliminarHorario(id_Horari) {
+      try {
+        const resultado = await this.destroy({
+          where: { id_Horari }
+        });
+  
+        if (resultado === 0) {
+          throw new Error(`Horario con id ${id_Horari} no encontrado`);
+        }
+  
+        return { message: `Horario con id ${id_Horari} eliminado con éxito` };
+      } catch (error) {
+        console.error(`Error al eliminar horario: ${error}`);
+        throw error;
       }
-      return null;
-    } catch (error) {
-      console.error(`Error al eliminar el horario: ${error}`);
-      throw error;
     }
-  }
+  
+    // Método para actualizar un horario
+    static async actualizarHorario(id_Horari, datosActualizados) {
+      try {
+        const [filasActualizadas] = await this.update(datosActualizados, {
+          where: { id_Horari }
+        });
+  
+        if (filasActualizadas === 0) {
+          throw new Error(`Horario con id ${id_Horari} no encontrado o sin cambios`);
+        }
+  
+        return { message: `Horario con id ${id_Horari} actualizado con éxito` };
+      } catch (error) {
+        console.error(`Error al actualizar horario: ${error}`);
+        throw error;
+      }
+    }
+
+    static async obtenerTodosLosHorarios() {
+      try {
+        return await this.findAll(); // Consulta todos los registros en la tabla
+      } catch (error) {
+        console.error(`Error al obtener todos los horarios: ${error}`);
+        throw error;
+      }
+    }
+    
+
 }
 
 Horario.init(

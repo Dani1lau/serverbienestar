@@ -16,10 +16,11 @@ class ProgramacionCapaTaller extends Model {
         :horaInicio_procaptall,
         :horaFin_procaptall,
         :nombreTaller,     
-        :nombreCapacitador, 
-        :numero_FichaFK
+        :nombreCapacitador,
+        :numero_FichaFK,
+        :nombreInstructor   -- Se agrega el parámetro del instructor
       )`;
-
+  
       // Ejecutamos la consulta con los parámetros
       const result = await sequelize.query(query, {
         replacements: {
@@ -32,9 +33,10 @@ class ProgramacionCapaTaller extends Model {
           nombreTaller: data.nombreTaller,
           nombreCapacitador: data.nombreCapacitador,
           numero_FichaFK: data.numero_FichaFK,
+          nombreInstructor: data.nombreInstructor   // Nuevo parámetro para el instructor
         },
       });
-
+  
       // Retorna el resultado si es necesario
       return result;
     } catch (error) {
@@ -42,6 +44,7 @@ class ProgramacionCapaTaller extends Model {
       throw new Error(`No se pudo crear la programación: ${error.message}`);
     }
   }
+  
 
   // Llamar al procedimiento almacenado para obtener la programación por ficha
   static async getProgramacionPorFicha(ficha, cordinacion) {
@@ -164,12 +167,16 @@ class ProgramacionCapaTaller extends Model {
         horaInicio_procaptall,
         horaFin_procaptall,
         nombreTaller,
-        nombreCapacitador, // Aquí se espera el nombre completo
+        nombreCapacitador, // Aquí se espera el nombre completo del capacitador
         numero_FichaFK,
+        nombreInstructor // Nuevo campo para el nombre completo del instructor
       } = update_programacionCT;
   
-      // Descomponer el nombre completo en nombre y apellido
+      // Descomponer el nombre completo del capacitador en nombre y apellido
       const [nombre_Capac, apellidos_Capac] = nombreCapacitador.split(" ");
+  
+      // Descomponer el nombre completo del instructor en nombre y apellido
+      const [nombre_Instruc, apellidos_Instruc] = nombreInstructor.split(" ");
   
       // Verificar si el capacitador ya está programado en la misma franja horaria
       const overlappingCapacitador = await this.findAll({
@@ -203,6 +210,40 @@ class ProgramacionCapaTaller extends Model {
   
       if (overlappingCapacitador.length > 0) {
         throw new Error("El capacitador ya está programado en esta franja horaria.");
+      }
+  
+      // Verificar si el instructor ya está programado en la misma franja horaria
+      const overlappingInstructor = await this.findAll({
+        where: {
+          id_procaptall: { [Op.ne]: id_procaptall }, // Excluir el ID que se está actualizando
+          fecha_procaptall,
+          [Op.and]: [
+            {
+              '$Instructor.nombre_Instruc$': nombre_Instruc,
+              '$Instructor.apellidos_Instruc$': apellidos_Instruc,
+            },
+          ],
+          [Op.or]: [
+            {
+              horaInicio_procaptall: { [Op.lt]: horaFin_procaptall },
+              horaFin_procaptall: { [Op.gt]: horaInicio_procaptall },
+            },
+            {
+              horaInicio_procaptall: { [Op.between]: [horaInicio_procaptall, horaFin_procaptall] },
+            },
+            {
+              horaFin_procaptall: { [Op.between]: [horaInicio_procaptall, horaFin_procaptall] },
+            },
+          ],
+        },
+        include: [{
+          model: Instructor, // Asegúrate de tener la relación definida en tu modelo
+          attributes: ['nombre_Instruc', 'apellidos_Instruc'],
+        }],
+      });
+  
+      if (overlappingInstructor.length > 0) {
+        throw new Error("El instructor ya está programado en esta franja horaria.");
       }
   
       // Validar que el ambiente no esté en uso
@@ -240,6 +281,7 @@ class ProgramacionCapaTaller extends Model {
           horaFin_procaptall,
           nombreTaller,
           numero_FichaFK,
+          nombreInstructor, // Actualización del campo nombreInstructor
         },
         {
           where: { id_procaptall },
@@ -256,8 +298,6 @@ class ProgramacionCapaTaller extends Model {
       throw error;
     }
   }
-  
-  
 
   static async eliminarProgramacionCT(id_procaptall) {
     try {
@@ -287,6 +327,7 @@ ProgramacionCapaTaller.init(
     id_TallerFK: { type: DataTypes.INTEGER, allowNull: false },
     id_CapacFK: { type: DataTypes.INTEGER, allowNull: false },
     numero_FichaFK: { type: DataTypes.INTEGER, allowNull: false },
+    id_InstrucFK: { type: DataTypes.STRING(85), allowNull: false },
   },
   {
     sequelize,
