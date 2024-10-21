@@ -1,4 +1,7 @@
 import { ProgramacionCapaTaller } from "../models/programacion_capa_taller.model.js";
+import nodemailer from "nodemailer";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 class ProgramacionCapaTallerController {
   // Obtener programaciones por ficha
@@ -138,53 +141,188 @@ class ProgramacionCapaTallerController {
     }
   }
 
+
   static async postProgramacionCT(req, res) {
-    try {
-      // Aquí obtenemos los datos que vienen desde el cuerpo de la solicitud
-      const pct = {
-        sede_procaptall: req.body.sede_procaptall,
-        descripcion_procaptall: req.body.descripcion_procaptall,
-        ambiente_procaptall: req.body.ambiente_procaptall,
-        fecha_procaptall: req.body.fecha_procaptall,
-        horaInicio_procaptall: req.body.horaInicio_procaptall,
-        horaFin_procaptall: req.body.horaFin_procaptall,
-        nombreTaller: req.body.nombreTaller, // Nombre del taller
-        nombreCapacitador: req.body.nombreCapacitador, // Nombre completo del capacitador
-        numero_FichaFK: req.body.numero_FichaFK,
-        nombreInstructor: req.body.nombreInstructor // Nombre completo del instructor
-      };
-  
-      // Validación de datos (opcional)
-      if (
-        !pct.sede_procaptall ||
-        !pct.descripcion_procaptall ||
-        !pct.ambiente_procaptall ||
-        !pct.fecha_procaptall ||
-        !pct.horaInicio_procaptall ||
-        !pct.horaFin_procaptall ||
-        !pct.nombreTaller ||
-        !pct.nombreCapacitador ||
-        !pct.numero_FichaFK ||
-        !pct.nombreInstructor // Se agrega la validación del nombre del instructor
-      ) {
-        return res
-          .status(400)
-          .json({ message: "Todos los campos son obligatorios." });
-      }
-  
-      // Llamamos al modelo para crear la programación
-      await ProgramacionCapaTaller.createProgramacionCT(pct);
-  
-      // Respuesta exitosa
-      res.status(201).json({ message: "Programación creada con éxito" });
-    } catch (error) {
-      // En caso de error, devolvemos el mensaje de error
-      console.error(`Error al crear la programación: ${error.message}`);
-      res
-        .status(500)
-        .json({ message: "Error al crear la programación: " + error.message });
+    const {
+        sede_procaptall,
+        descripcion_procaptall,
+        ambiente_procaptall,
+        fecha_procaptall,
+        horaInicio_procaptall,
+        horaFin_procaptall,
+        nombreTaller,
+        nombreCapacitador,
+        numero_FichaFK,
+        nombreInstructor,
+    } = req.body;
+
+    // Validar campos obligatorios
+    if (
+        !sede_procaptall ||
+        !descripcion_procaptall ||
+        !ambiente_procaptall ||
+        !fecha_procaptall ||
+        !horaInicio_procaptall ||
+        !horaFin_procaptall ||
+        !nombreTaller ||
+        !nombreCapacitador ||
+        !numero_FichaFK ||
+        !nombreInstructor
+    ) {
+        return res.status(400).json({ message: "Todos los campos son requeridos." });
     }
-  }
+
+    try {
+        // Crear la programación
+        const { success, correos } = await ProgramacionCapaTaller.createProgramacionCT({
+            sede_procaptall,
+            descripcion_procaptall,
+            ambiente_procaptall,
+            fecha_procaptall,
+            horaInicio_procaptall,
+            horaFin_procaptall,
+            nombreTaller,
+            nombreCapacitador,
+            numero_FichaFK,
+            nombreInstructor,
+        });
+
+        if (!success) {
+            return res.status(500).json({ message: "Error al crear la programación." });
+        }
+
+        const { correoCapacitador, correoInstructor } = correos;
+
+        // Verificar si se obtuvieron los correos
+        if (!correoCapacitador || !correoInstructor) {
+            return res.status(500).json({ message: "No se obtuvieron correos para enviar notificación." });
+        }
+
+        // Configurar el transporte de Nodemailer para Gmail
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.GMAIL_USER="soydanielra@gmail.com", 
+                pass: process.env.GMAIL_PASS="abgo fbls snjb pmuj",
+            },
+            tls: {
+                rejectUnauthorized: false,
+            },
+        });
+
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);  
+
+        // Configurar el contenido del correo
+        const mailOptions = {
+            from: process.env.GMAIL_USER="soydanielra@gmail.com", 
+            to: [correoCapacitador, correoInstructor], 
+            subject: "Nueva Programación de Taller",
+            attachments: [
+              {
+                filename: "logo.png",
+                path: __dirname + "/../assets/images/logo.png",
+                cid: "logoSena",
+              },
+              {
+                filename: "Logo de Bienestar.png",
+                path: __dirname + "/../assets/images/Logo de Bienestar.png",
+                cid: "logoBienestar",
+              },
+            ],
+            html: `
+              <html>
+                <head>
+                  <style>
+                    body {
+                      font-family: Arial, sans-serif;
+                      margin: 0;
+                      padding: 0;
+                      background-color: #f4f4f4;
+                    }
+                    .container {
+                      width: 100%;
+                      max-width: 600px;
+                      margin: auto;
+                      background-color: #ffffff;
+                      border-radius: 10px;
+                      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                    }
+                    .header {
+                      background-color: #4CAF50;
+                      padding: 20px;
+                      text-align: center;
+                      color: white;
+                      border-radius: 10px 10px 0 0;
+                    }
+                    .header img {
+                      width: 100px;
+                    }
+                    .content {
+                      padding: 20px;
+                    }
+                    .content h2 {
+                      color: #4CAF50;
+                    }
+                    .details {
+                      margin: 20px 0;
+                      padding: 10px;
+                      border: 1px solid #ccc;
+                      border-radius: 5px;
+                      background-color: #f9f9f9;
+                    }
+                    .footer {
+                      padding: 20px;
+                      text-align: center;
+                      font-size: 12px;
+                      color: #777;
+                    }
+                    .logo-bienestar {
+                      margin-top: 20px;
+                      width: 150px;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <div class="header">
+                      <img src="cid:logoSena" alt="Logo Sena" style="border-radius:100%">
+                      <p><h1>${nombreTaller}</h1></p>
+                    </div>
+                    <div class="content">
+                      <h2>Información del Taller</h2>
+                      <div class="details">
+                        <p><strong>Sede:</strong> ${sede_procaptall}</p>
+                        <p><strong>Ambiente en el que se realizara:</strong> ${ambiente_procaptall}</p>
+                        <p><strong>Ficha:</strong> ${numero_FichaFK}</p>
+                        <p><strong>Instructor a Cargo:</strong> ${nombreInstructor}</p>
+                        <p><strong>Profesional a cargo del taller:</strong> ${nombreCapacitador}</p>
+                        <p><strong>Fecha:</strong> ${fecha_procaptall}</p>
+                        <p><strong>Hora de inicio y fin:</strong> ${horaInicio_procaptall}/${horaFin_procaptall}</p>
+                        <p><strong>Detalles del Taller:</strong> ${descripcion_procaptall}</p>
+                      </div>
+                    </div>
+                    <div class="footer">
+                      <img src="cid:logoBienestar" class="logo-bienestar" alt="Logo de Bienestar">
+                      <p>&copy; ${new Date().getFullYear()} SENA. Todos los derechos reservados.</p>
+                    </div>
+                  </div>
+                </body>
+              </html>
+            `,
+          };
+
+        // Enviar el correo
+        await transporter.sendMail(mailOptions);
+
+        // Respuesta exitosa
+        res.status(201).json({ message: "Programación creada y correos enviados." });
+    } catch (error) {
+        console.error("Error al crear la programación o enviar correos:", error);
+        res.status(500).json({ message: "Error al crear la programación o enviar correos: " + error.message });
+    }
+}
+
 
 
   static async deleteProgramacionCT(req, res) {

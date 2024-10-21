@@ -1,50 +1,67 @@
 import { DataTypes, Model, Op } from "sequelize";
 import { sequelize } from "../config/db.js";
-import {Capacitador} from './capacitador.model.js';
-
+import { Capacitador } from "./capacitador.model.js";
 
 class ProgramacionCapaTaller extends Model {
   // Crear programación invocando el procedimiento almacenado
-  static async createProgramacionCT(data) {
-    try {
-      const query = `
-      CALL sp_programarTaller(
-        :sede_procaptall,
-        :descripcion_procaptall,
-        :ambiente_procaptall,
-        :fecha_procaptall,
-        :horaInicio_procaptall,
-        :horaFin_procaptall,
-        :nombreTaller,     
-        :nombreCapacitador,
-        :numero_FichaFK,
-        :nombreInstructor   -- Se agrega el parámetro del instructor
-      )`;
-  
-      // Ejecutamos la consulta con los parámetros
-      const result = await sequelize.query(query, {
-        replacements: {
-          sede_procaptall: data.sede_procaptall,
-          descripcion_procaptall: data.descripcion_procaptall,
-          ambiente_procaptall: data.ambiente_procaptall,
-          fecha_procaptall: data.fecha_procaptall,
-          horaInicio_procaptall: data.horaInicio_procaptall,
-          horaFin_procaptall: data.horaFin_procaptall,
-          nombreTaller: data.nombreTaller,
-          nombreCapacitador: data.nombreCapacitador,
-          numero_FichaFK: data.numero_FichaFK,
-          nombreInstructor: data.nombreInstructor   // Nuevo parámetro para el instructor
-        },
-      });
-  
-      // Retorna el resultado si es necesario
-      return result;
-    } catch (error) {
-      console.error(`Error al crear la programación: ${error.message}`);
-      throw new Error(`No se pudo crear la programación: ${error.message}`);
-    }
+
+  static async createProgramacionCT({
+        sede_procaptall,
+        descripcion_procaptall,
+        ambiente_procaptall,
+        fecha_procaptall,
+        horaInicio_procaptall,
+        horaFin_procaptall,
+        nombreTaller,
+        nombreCapacitador,
+        numero_FichaFK,
+        nombreInstructor
+    }) {
+        try {
+            // Ejecutar el procedimiento almacenado
+            const resultado = await sequelize.query(
+                `CALL sp_programarTaller(
+                    :sede_procaptall, 
+                    :descripcion_procaptall, 
+                    :ambiente_procaptall, 
+                    :fecha_procaptall, 
+                    :horaInicio_procaptall, 
+                    :horaFin_procaptall, 
+                    :nombreTaller, 
+                    :nombreCapacitador, 
+                    :numero_FichaFK, 
+                    :nombreInstructor
+                )`,
+                {
+                    replacements: {
+                        sede_procaptall,
+                        descripcion_procaptall,
+                        ambiente_procaptall,
+                        fecha_procaptall,
+                        horaInicio_procaptall,
+                        horaFin_procaptall,
+                        nombreTaller,
+                        nombreCapacitador,
+                        numero_FichaFK,
+                        nombreInstructor
+                    }
+                }
+            );
+
+            // Extraer los correos devueltos por el procedimiento almacenado
+            const correos = resultado[0]; // Asegurarse que el procedimiento retorna datos correctos
+            console.log("correos :", correos);
+            if (!correos || !correos.correoCapacitador || !correos.correoInstructor) {
+                throw new Error('No se pudieron obtener los correos.');
+            }
+
+            // Devolver un resultado exitoso
+            return { success: true, correos };
+        } catch (error) {
+            console.error('Error al crear la programación:', error.message);
+            throw new Error('No se pudo crear la programación: ' + error.message);
+        }
   }
-  
 
   // Llamar al procedimiento almacenado para obtener la programación por ficha
   static async getProgramacionPorFicha(ficha, cordinacion) {
@@ -169,15 +186,15 @@ class ProgramacionCapaTaller extends Model {
         nombreTaller,
         nombreCapacitador, // Aquí se espera el nombre completo del capacitador
         numero_FichaFK,
-        nombreInstructor // Nuevo campo para el nombre completo del instructor
+        nombreInstructor, // Nuevo campo para el nombre completo del instructor
       } = update_programacionCT;
-  
+
       // Descomponer el nombre completo del capacitador en nombre y apellido
       const [nombre_Capac, apellidos_Capac] = nombreCapacitador.split(" ");
-  
+
       // Descomponer el nombre completo del instructor en nombre y apellido
       const [nombre_Instruc, apellidos_Instruc] = nombreInstructor.split(" ");
-  
+
       // Verificar si el capacitador ya está programado en la misma franja horaria
       const overlappingCapacitador = await this.findAll({
         where: {
@@ -185,8 +202,8 @@ class ProgramacionCapaTaller extends Model {
           fecha_procaptall,
           [Op.and]: [
             {
-              '$Capacitador.nombre_Capac$': nombre_Capac,
-              '$Capacitador.apellidos_Capac$': apellidos_Capac,
+              "$Capacitador.nombre_Capac$": nombre_Capac,
+              "$Capacitador.apellidos_Capac$": apellidos_Capac,
             },
           ],
           [Op.or]: [
@@ -195,23 +212,31 @@ class ProgramacionCapaTaller extends Model {
               horaFin_procaptall: { [Op.gt]: horaInicio_procaptall },
             },
             {
-              horaInicio_procaptall: { [Op.between]: [horaInicio_procaptall, horaFin_procaptall] },
+              horaInicio_procaptall: {
+                [Op.between]: [horaInicio_procaptall, horaFin_procaptall],
+              },
             },
             {
-              horaFin_procaptall: { [Op.between]: [horaInicio_procaptall, horaFin_procaptall] },
+              horaFin_procaptall: {
+                [Op.between]: [horaInicio_procaptall, horaFin_procaptall],
+              },
             },
           ],
         },
-        include: [{
-          model: Capacitador, // Asegúrate de tener la relación definida en tu modelo
-          attributes: ['nombre_Capac', 'apellidos_Capac'],
-        }],
+        include: [
+          {
+            model: Capacitador, // Asegúrate de tener la relación definida en tu modelo
+            attributes: ["nombre_Capac", "apellidos_Capac"],
+          },
+        ],
       });
-  
+
       if (overlappingCapacitador.length > 0) {
-        throw new Error("El capacitador ya está programado en esta franja horaria.");
+        throw new Error(
+          "El capacitador ya está programado en esta franja horaria."
+        );
       }
-  
+
       // Verificar si el instructor ya está programado en la misma franja horaria
       const overlappingInstructor = await this.findAll({
         where: {
@@ -219,8 +244,8 @@ class ProgramacionCapaTaller extends Model {
           fecha_procaptall,
           [Op.and]: [
             {
-              '$Instructor.nombre_Instruc$': nombre_Instruc,
-              '$Instructor.apellidos_Instruc$': apellidos_Instruc,
+              "$Instructor.nombre_Instruc$": nombre_Instruc,
+              "$Instructor.apellidos_Instruc$": apellidos_Instruc,
             },
           ],
           [Op.or]: [
@@ -229,23 +254,31 @@ class ProgramacionCapaTaller extends Model {
               horaFin_procaptall: { [Op.gt]: horaInicio_procaptall },
             },
             {
-              horaInicio_procaptall: { [Op.between]: [horaInicio_procaptall, horaFin_procaptall] },
+              horaInicio_procaptall: {
+                [Op.between]: [horaInicio_procaptall, horaFin_procaptall],
+              },
             },
             {
-              horaFin_procaptall: { [Op.between]: [horaInicio_procaptall, horaFin_procaptall] },
+              horaFin_procaptall: {
+                [Op.between]: [horaInicio_procaptall, horaFin_procaptall],
+              },
             },
           ],
         },
-        include: [{
-          model: Instructor, // Asegúrate de tener la relación definida en tu modelo
-          attributes: ['nombre_Instruc', 'apellidos_Instruc'],
-        }],
+        include: [
+          {
+            model: Instructor, // Asegúrate de tener la relación definida en tu modelo
+            attributes: ["nombre_Instruc", "apellidos_Instruc"],
+          },
+        ],
       });
-  
+
       if (overlappingInstructor.length > 0) {
-        throw new Error("El instructor ya está programado en esta franja horaria.");
+        throw new Error(
+          "El instructor ya está programado en esta franja horaria."
+        );
       }
-  
+
       // Validar que el ambiente no esté en uso
       const conflictingAmbiente = await this.findOne({
         where: {
@@ -257,19 +290,23 @@ class ProgramacionCapaTaller extends Model {
               horaFin_procaptall: { [Op.gt]: horaInicio_procaptall },
             },
             {
-              horaInicio_procaptall: { [Op.between]: [horaInicio_procaptall, horaFin_procaptall] },
+              horaInicio_procaptall: {
+                [Op.between]: [horaInicio_procaptall, horaFin_procaptall],
+              },
             },
             {
-              horaFin_procaptall: { [Op.between]: [horaInicio_procaptall, horaFin_procaptall] },
+              horaFin_procaptall: {
+                [Op.between]: [horaInicio_procaptall, horaFin_procaptall],
+              },
             },
           ],
         },
       });
-  
+
       if (conflictingAmbiente) {
         throw new Error("El ambiente ya está en uso en esta franja horaria.");
       }
-  
+
       // Actualizar la programación
       const result = await this.update(
         {
@@ -287,11 +324,11 @@ class ProgramacionCapaTaller extends Model {
           where: { id_procaptall },
         }
       );
-  
+
       if (result[0] === 0) {
         throw new Error("No se encontró la programación para actualizar.");
       }
-  
+
       return result;
     } catch (error) {
       console.error(`Error al actualizar la programación: ${error.message}`);
@@ -339,8 +376,8 @@ ProgramacionCapaTaller.init(
 
 // Definir la asociación aquí
 ProgramacionCapaTaller.belongsTo(Capacitador, {
-  foreignKey: 'id_CapacFK',
-  targetKey: 'id_Capac',
+  foreignKey: "id_CapacFK",
+  targetKey: "id_Capac",
 });
 
 // Función para obtener y mostrar la programación
