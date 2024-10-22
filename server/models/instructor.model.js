@@ -1,5 +1,6 @@
 import { DataTypes, INTEGER, Model } from "sequelize";
 import { sequelize } from "../config/db.js";
+import { Usuario } from "./usuario.model.js";
 
 class Instructor extends Model {
   static async createInstructor(instructor) {
@@ -58,5 +59,6 @@ Instructor.init(
     underscored: false
   }
 );
+
 
 export {Instructor};

@@ -1,5 +1,6 @@
 import { DataTypes, INTEGER, Model } from "sequelize";
 import { sequelize } from "../config/db.js";
+import { Usuario } from "./usuario.model.js";
 
 class Capacitador extends Model {
   static async createCapacitador(capacitador) {
@@ -58,5 +59,6 @@ Capacitador.init(
     underscored: false
   }
 );
+
 
 export {Capacitador};

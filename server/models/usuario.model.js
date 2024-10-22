@@ -1,7 +1,9 @@
 import { DataTypes, INTEGER, Model } from "sequelize";
 import { sequelize } from "../config/db.js";
+import { Capacitador } from "./capacitador.model.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto"; // Para generar claves seguras
+import { Instructor } from "./instructor.model.js";
 
 class Usuario extends Model {
   static async registrarUsuario(usuario) {
@@ -259,5 +261,7 @@ Usuario.init(
     underscored: false,
   }
 );
+
+
 
 export { Usuario };
