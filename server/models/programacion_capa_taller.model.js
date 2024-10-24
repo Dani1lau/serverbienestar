@@ -176,22 +176,22 @@ class ProgramacionCapaTaller extends Model {
 
   static async updateProgramacionCT(id_procaptall, update_programacionCT) {
     try {
-        const {
-            sede_procaptall,
-            descripcion_procaptall,
-            ambiente_procaptall,
-            fecha_procaptall,
-            horaInicio_procaptall,
-            horaFin_procaptall,
-            nombreTaller,
-            nombreCapacitador,
-            numero_FichaFK,
-            nombreInstructor,
-        } = update_programacionCT;
+      const {
+        sede_procaptall,
+        descripcion_procaptall,
+        ambiente_procaptall,
+        fecha_procaptall,
+        horaInicio_procaptall,
+        horaFin_procaptall,
+        nombreTaller,
+        nombreCapacitador,
+        numero_FichaFK,
+        nombreInstructor,
+      } = update_programacionCT;
 
-        // Llamar al procedimiento almacenado
-        const [results, metadata] = await sequelize.query(
-            `CALL sp_actualizarProgramacion(
+      // Llamar al procedimiento almacenado
+      const result = await sequelize.query(
+        `CALL sp_actualizarProgramacion(
                 :id_procaptall, 
                 :sede_procaptall, 
                 :descripcion_procaptall, 
@@ -204,51 +204,57 @@ class ProgramacionCapaTaller extends Model {
                 :numero_FichaFK, 
                 :nombreInstructor
             )`,
+        {
+          replacements: {
+            id_procaptall,
+            sede_procaptall,
+            descripcion_procaptall: descripcion_procaptall.trim(),
+            ambiente_procaptall,
+            fecha_procaptall,
+            horaInicio_procaptall,
+            horaFin_procaptall,
+            nombreTaller,
+            nombreCapacitador,
+            numero_FichaFK,
+            nombreInstructor,
+          },
+        }
+      );
+      // Extraer los correos devueltos por el procedimiento almacenado
+      const correos = result[0]; // Asegurarse que el procedimiento retorna datos correctos
+      console.log("correos :", correos);
+      if (!correos || !correos.correoCapacitador || !correos.correoInstructor) {
+        throw new Error("No se pudieron obtener los correos.");
+      }
+
+      // Devolver un resultado exitoso
+      return { success: true, correos };
+    } catch (error) {
+      console.error(`Error al actualizar la programación: ${error.message}`);
+      throw new Error("Error al actualizar la programación: " + error.message);
+    }
+  }
+
+  static async eliminarProgramacionCT(id_procaptall) {
+    try {
+        // Ejecutar el procedimiento almacenado y obtener los correos junto con los detalles de la programación
+        const result = await sequelize.query(
+            `CALL sp_eliminarProgramacion(:id_procaptall)`, 
             {
-                replacements: {
-                    id_procaptall,
-                    sede_procaptall,
-                    descripcion_procaptall: descripcion_procaptall.trim(),
-                    ambiente_procaptall,
-                    fecha_procaptall,
-                    horaInicio_procaptall,
-                    horaFin_procaptall,
-                    nombreTaller,
-                    nombreCapacitador,
-                    numero_FichaFK,
-                    nombreInstructor,
-                },
+                replacements: { id_procaptall }, // Paso de parámetros
+                type: sequelize.QueryTypes.SELECT // Definir el tipo de consulta
             }
         );
 
-        // Extraer los correos devueltos por el procedimiento almacenado
-        const correos = results[0]; // Asegurarse de que results devuelve los datos correctos
-        console.log("correos:", correos);
-        if (!correos || !correos.correoCapacitador || !correos.correoInstructor) {
-            throw new Error("No se pudieron obtener los correos.");
-        }
-
         // Devolver un resultado exitoso
-        return { success: true, correos };
+        return result[0];
     } catch (error) {
-        console.error(`Error al actualizar la programación: ${error.message}`);
-        throw new Error("Error al actualizar la programación: " + error.message);
+        console.error(`Error al eliminar la programación y obtener los correos: ${error.message}`);
+        throw error;
     }
 }
 
 
-
-  static async eliminarProgramacionCT(id_procaptall) {
-    try {
-      const programacionCT = await ProgramacionCapaTaller.destroy({
-        where: { id_procaptall },
-      });
-      return programacionCT;
-    } catch (error) {
-      console.error(`error al eliminar la programacion: ${error}`);
-      throw error;
-    }
-  }
 }
 
 ProgramacionCapaTaller.init(

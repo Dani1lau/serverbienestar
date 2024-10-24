@@ -108,106 +108,107 @@ class ProgramacionCapaTallerController {
 
   static async putProgramacionCT(req, res) {
     try {
-        // Extraer el id de la solicitud
-        const id_procaptall = parseInt(req.params.id);
+      // Extraer el id de la solicitud
+      const id_procaptall = parseInt(req.params.id);
 
-        // Extraer datos del cuerpo de la solicitud
-        const {
-            sede_procaptall,
-            descripcion_procaptall,
-            ambiente_procaptall,
-            fecha_procaptall,
-            horaInicio_procaptall,
-            horaFin_procaptall,
-            nombreTaller,
-            nombreCapacitador,
-            numero_FichaFK,
-            nombreInstructor,
-        } = req.body;
+      // Extraer datos del cuerpo de la solicitud
+      const {
+        sede_procaptall,
+        descripcion_procaptall,
+        ambiente_procaptall,
+        fecha_procaptall,
+        horaInicio_procaptall,
+        horaFin_procaptall,
+        nombreTaller,
+        nombreCapacitador,
+        numero_FichaFK,
+        nombreInstructor,
+      } = req.body;
 
-        // Validación de campos obligatorios
-        if (
-            !sede_procaptall ||
-            !descripcion_procaptall ||
-            !ambiente_procaptall ||
-            !fecha_procaptall ||
-            !horaInicio_procaptall ||
-            !horaFin_procaptall ||
-            !nombreTaller ||
-            !nombreCapacitador ||
-            !numero_FichaFK ||
-            !nombreInstructor
-        ) {
-            return res.status(400).json({ message: "Todos los campos son requeridos." });
+      // Validación de campos obligatorios
+      if (
+        !sede_procaptall ||
+        !descripcion_procaptall ||
+        !ambiente_procaptall ||
+        !fecha_procaptall ||
+        !horaInicio_procaptall ||
+        !horaFin_procaptall ||
+        !nombreTaller ||
+        !nombreCapacitador ||
+        !numero_FichaFK ||
+        !nombreInstructor
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Todos los campos son requeridos." });
+      }
+
+      // Actualizar la programación usando el procedimiento almacenado
+      const result = await ProgramacionCapaTaller.updateProgramacionCT(
+        id_procaptall,
+        {
+          sede_procaptall,
+          descripcion_procaptall,
+          ambiente_procaptall,
+          fecha_procaptall,
+          horaInicio_procaptall,
+          horaFin_procaptall,
+          nombreTaller,
+          nombreCapacitador,
+          numero_FichaFK,
+          nombreInstructor,
         }
+      );
 
-        // Verificar si la programación existe
-        const programacionExistente = await ProgramacionCapaTaller.findByPk(id_procaptall);
-        if (!programacionExistente) {
-            return res.status(404).json({ message: "No se encontró la programación." });
-        }
+      // Verificar si la actualización fue exitosa
+      if (!result.success) {
+        return res
+          .status(500)
+          .json({ message: "Error al actualizar la programación." });
+      }
 
-        // Actualizar la programación usando el procedimiento almacenado
-        const result = await ProgramacionCapaTaller.updateProgramacionCT(id_procaptall, {
-            sede_procaptall,
-            descripcion_procaptall,
-            ambiente_procaptall,
-            fecha_procaptall,
-            horaInicio_procaptall,
-            horaFin_procaptall,
-            nombreTaller,
-            nombreCapacitador,
-            numero_FichaFK,
-            nombreInstructor,
+      const { correoCapacitador, correoInstructor } = result.correos; // Obtener correos del resultado
+
+      // Verificar si se obtuvieron los correos
+      if (!correoCapacitador || !correoInstructor) {
+        return res.status(500).json({
+          message: "No se obtuvieron correos para enviar notificación.",
         });
+      }
 
-        // Verificar si la actualización fue exitosa
-        if (!result.success) {
-            return res.status(500).json({ message: "Error al actualizar la programación." });
-        }
+      // Configurar el transporte de Nodemailer para Gmail
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
+          pass: (process.env.GMAIL_PASS = "abgo fbls snjb pmuj"),
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
 
-        const { correoCapacitador, correoInstructor } = result.correos; // Obtener correos del resultado
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
 
-        // Verificar si se obtuvieron los correos
-        if (!correoCapacitador || !correoInstructor) {
-            return res.status(500).json({
-                message: "No se obtuvieron correos para enviar notificación.",
-            });
-        }
-
-        // Configurar el transporte de Nodemailer para Gmail
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.GMAIL_USER = "soydanielra@gmail.com",
-                pass: process.env.GMAIL_PASS = "abgo fbls snjb pmuj",
-            },
-            tls: {
-                rejectUnauthorized: false,
-            },
-        });
-
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = dirname(__filename);
-
-        // Configurar el contenido del correo
-        const mailOptions = {
-            from: process.env.GMAIL_USER,
-            to: [correoCapacitador, correoInstructor],
-            subject: "Actualización de Programación de Taller",
-            attachments: [
-                {
-                    filename: "logo.png",
-                    path: __dirname + "/../assets/images/logo.png",
-                    cid: "logoSena",
-                },
-                {
-                    filename: "Logo de Bienestar.png",
-                    path: __dirname + "/../assets/images/Logo de Bienestar.png",
-                    cid: "logoBienestar",
-                },
-            ],
-            html: `
+      // Configurar el contenido del correo
+      const mailOptions = {
+        from: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
+        to: [correoCapacitador, correoInstructor],
+        subject: "Actualización de Programación de Taller",
+        attachments: [
+          {
+            filename: "logo.png",
+            path: __dirname + "/../assets/images/logo.png",
+            cid: "logoSena",
+          },
+          {
+            filename: "Logo de Bienestar.png",
+            path: __dirname + "/../assets/images/Logo de Bienestar.png",
+            cid: "logoBienestar",
+          },
+        ],
+        html: `
                 <html>
                     <head>
                         <style>
@@ -263,7 +264,7 @@ class ProgramacionCapaTallerController {
                     <body>
                         <div class="container">
                             <div class="header">
-                                <img src="cid:logoSena" alt="Logo Sena">
+                                <img src="cid:logoSena" alt="Logo Sena" style="border-radius:100%">
                                 <h1>${nombreTaller}</h1>
                             </div>
                             <div class="content">
@@ -271,7 +272,7 @@ class ProgramacionCapaTallerController {
                                 <div class="details">
                                     <p><strong>Sede:</strong> ${sede_procaptall}</p>
                                     <p><strong>Ambiente:</strong> ${ambiente_procaptall}</p>
-                                    <p><strong>Ficha:</strong> ${numero_FichaFK}</p>
+                                    <p><strong>Ficha(s):</strong> ${numero_FichaFK}</p>
                                     <p><strong>Instructor a Cargo:</strong> ${nombreInstructor}</p>
                                     <p><strong>Profesional a Cargo:</strong> ${nombreCapacitador}</p>
                                     <p><strong>Fecha:</strong> ${fecha_procaptall}</p>
@@ -288,24 +289,26 @@ class ProgramacionCapaTallerController {
                     </body>
                 </html>
             `,
-        };
+      };
 
-        // Enviar el correo
-        await transporter.sendMail(mailOptions);
+      // Enviar el correo
+      await transporter.sendMail(mailOptions);
 
-        res.status(200).json({
-            message: "Programación actualizada y correos enviados.",
-        });
+      res.status(200).json({
+        message: "Programación actualizada y correos enviados.",
+      });
     } catch (error) {
-        console.error("Error al actualizar la programación o enviar correos:", error);
-        res.status(500).json({
-            message: "Error al actualizar la programación o enviar correos: " + error.message,
-        });
+      console.error(
+        "Error al actualizar la programación o enviar correos:",
+        error
+      );
+      res.status(500).json({
+        message:
+          "Error al actualizar la programación o enviar correos: " +
+          error.message,
+      });
     }
-}
-
-
-
+  }
 
   static async postProgramacionCT(req, res) {
     const {
@@ -365,11 +368,9 @@ class ProgramacionCapaTallerController {
 
       // Verificar si se obtuvieron los correos
       if (!correoCapacitador || !correoInstructor) {
-        return res
-          .status(500)
-          .json({
-            message: "No se obtuvieron correos para enviar notificación.",
-          });
+        return res.status(500).json({
+          message: "No se obtuvieron correos para enviar notificación.",
+        });
       }
 
       // Configurar el transporte de Nodemailer para Gmail
@@ -468,7 +469,7 @@ class ProgramacionCapaTallerController {
                       <div class="details">
                         <p><strong>Sede:</strong> ${sede_procaptall}</p>
                         <p><strong>Ambiente en el que se realizara:</strong> ${ambiente_procaptall}</p>
-                        <p><strong>Ficha:</strong> ${numero_FichaFK}</p>
+                        <p><strong>Ficha(s):</strong> ${numero_FichaFK}</p>
                         <p><strong>Instructor a Cargo:</strong> ${nombreInstructor}</p>
                         <p><strong>Profesional a cargo del taller:</strong> ${nombreCapacitador}</p>
                         <p><strong>Fecha:</strong> ${fecha_procaptall}</p>
@@ -532,20 +533,16 @@ class ProgramacionCapaTallerController {
         }
       );
 
-      res
-        .status(201)
-        .json({
-          message:
-            "Programación creada y correos enviados, incluyendo recordatorios.",
-        });
+      res.status(201).json({
+        message:
+          "Programación creada y correos enviados, incluyendo recordatorios.",
+      });
     } catch (error) {
       console.error("Error al crear la programación o enviar correos:", error);
-      res
-        .status(500)
-        .json({
-          message:
-            "Error al crear la programación o enviar correos: " + error.message,
-        });
+      res.status(500).json({
+        message:
+          "Error al crear la programación o enviar correos: " + error.message,
+      });
     }
   }
 
@@ -553,19 +550,155 @@ class ProgramacionCapaTallerController {
     try {
       const { id_procaptall } = req.params;
       console.log("id_procaptall:", id_procaptall);
-      const result = await ProgramacionCapaTaller.eliminarProgramacionCT(
+
+      // Obtener detalles de la programación antes de eliminarla
+      const detalles = await ProgramacionCapaTaller.eliminarProgramacionCT(
         id_procaptall
       );
-      if (result) {
-        res
-          .status(200)
-          .json({ message: "Programacion eliminada exitosamente" });
-      } else {
-        res.status(404).json({ message: "Programacion no encontrada" });
+
+      // detalles debe contener el resultado de la segunda consulta en el procedimiento
+      if (!detalles || detalles.length === 0) {
+        return res.status(404).json({ message: "Programación no encontrada" });
       }
+
+      // Ya que `detalles` es el resultado de la segunda selección
+      const correos = detalles[0]; // Asumimos que el primer elemento tiene los datos
+
+      // Eliminar la programación (ya que ya tienes los correos y detalles)
+      await ProgramacionCapaTaller.eliminarProgramacionCT(id_procaptall);
+
+      // Verificar si se obtuvieron los correos
+      if (!correos.correoCapacitador || !correos.correoInstructor) {
+        return res.status(500).json({
+          message: "No se obtuvieron correos para enviar la notificación.",
+        });
+      }
+
+      // Configurar el transporte de Nodemailer para Gmail
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
+          pass: (process.env.GMAIL_PASS = "abgo fbls snjb pmuj"),
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
+
+      // Configurar el contenido del correo de eliminación
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+
+      const mailOptions = {
+        from: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
+        to: [correos.correoCapacitador, correos.correoInstructor],
+        subject: `Cancelación de la Programación de un Taller`,
+        attachments: [
+          {
+            filename: "logo.png",
+            path: __dirname + "/../assets/images/logo.png",
+            cid: "logoSena",
+          },
+          {
+            filename: "Logo de Bienestar.png",
+            path: __dirname + "/../assets/images/Logo de Bienestar.png",
+            cid: "logoBienestar",
+          },
+        ],
+        html: `
+        <html>
+            <head>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f4f4f4;
+                    }
+                    .container {
+                        width: 100%;
+                        max-width: 600px;
+                        margin: auto;
+                        background-color: #ffffff;
+                        border-radius: 10px;
+                        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                        overflow: hidden; /* Añadido para mejorar la presentación */
+                    }
+                    .header {
+                        background-color: #4CAF50;
+                        padding: 20px;
+                        text-align: center;
+                        color: white;
+                    }
+                    .header img {
+                        width: 100px;
+                        border-radius: 50%; /* Logo redondeado */
+                    }
+                    .content {
+                        padding: 20px;
+                        text-align: center; /* Centrado de texto */
+                    }
+                    .content h2 {
+                        color: #4CAF50;
+                    }
+                    .details {
+                        margin: 20px 0;
+                        padding: 15px;
+                        border: 1px solid #ccc;
+                        border-radius: 5px;
+                        background-color: #f9f9f9;
+                        text-align: center; /* Texto alineado a la izquierda para mayor legibilidad */
+                    }
+                    .footer {
+                        padding: 20px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #777;
+                    }
+                    .footer img {
+                        width: 120px; /* Ajustado para que se vea mejor */
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <img src="cid:logoSena" alt="Logo Sena">
+                        <h1>Notificación de Cancelación</h1>
+                    </div>
+                    <div class="content">
+                        <h2>Estimados ${correos.nombreCapacitador} y ${
+                          correos.nombreInstructor
+                        }.</h2>
+                        <div class="details">
+                            <p>El taller que fue programado para el <strong>${
+                              correos.fecha
+                            }</strong> a las <strong>${
+                              correos.horaInicio
+                            }</strong> ha sido cancelada.</p>
+                        </div>
+                        <p>Si tienen alguna pregunta, no duden en contactarnos.</p>
+                    </div>
+                    <div class="footer">
+                        <img src="cid:logoBienestar" alt="Logo de Bienestar">
+                        <p>&copy; ${new Date().getFullYear()} SENA. Todos los derechos reservados.</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+    `,
+      };
+
+      // Enviar el correo de notificación
+      await transporter.sendMail(mailOptions);
+
+      res.status(200).json({
+        message: "Programación eliminada exitosamente y notificación enviada.",
+      });
     } catch (error) {
-      console.error(`Error al eliminar la programacion: ${error.message}`);
-      res.status(500).json({ message: "Error al eliminar la programacion" });
+      console.error(`Error al eliminar la programación: ${error.message}`);
+      res.status(500).json({ message: "Error al eliminar la programación" });
     }
   }
 }
