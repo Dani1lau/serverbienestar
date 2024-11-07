@@ -11,42 +11,34 @@ class ProgramacionCapaTallerController {
   // Obtener programaciones por ficha
   static async getProgramacionesPorFicha(req, res) {
     try {
-      const ficha = parseInt(req.params.ficha, 10);
-      const cordinacion = req.params.cordinacion;
+        const ficha = parseInt(req.params.ficha, 10);
 
-      if (!ficha || !cordinacion) {
-        return res.status(400).json({ message: "Parámetros inválidos" });
-      }
+        if (!ficha) {
+            return res.status(400).json({ message: "Parámetro de ficha inválido" });
+        }
 
-      // Llama al método del modelo
-      const programaciones =
-        await ProgramacionCapaTaller.getProgramacionPorFicha(
-          ficha,
-          cordinacion
+        // Llama al método del modelo sin cordinacion
+        const programaciones = await ProgramacionCapaTaller.getProgramacionPorFicha(ficha);
+
+        // Filtrar duplicados basado en 'fecha_procaptall' y 'horaInicio_procaptall'
+        const uniqueProgramaciones = programaciones.filter(
+            (programacion, index, self) =>
+                index ===
+                self.findIndex(
+                    (p) =>
+                        p.fecha_procaptall === programacion.fecha_procaptall &&
+                        p.horaInicio_procaptall === programacion.horaInicio_procaptall
+                )
         );
 
-      // Filtrar duplicados basado en 'fecha_procaptall' y 'horaInicio_procaptall'
-      const uniqueProgramaciones = programaciones.filter(
-        (programacion, index, self) =>
-          index ===
-          self.findIndex(
-            (p) =>
-              p.fecha_procaptall === programacion.fecha_procaptall &&
-              p.horaInicio_procaptall === programacion.horaInicio_procaptall
-          )
-      );
-
-      res.status(200).json(uniqueProgramaciones);
+        res.status(200).json(uniqueProgramaciones);
     } catch (error) {
-      console.error(
-        `Error al obtener las programaciones por ficha (${req.params.ficha}):`,
-        error
-      );
-      res.status(500).json({
-        message: `Error al obtener las programaciones: ${error.message}`,
-      });
+        console.error(`Error al obtener las programaciones por ficha (${req.params.ficha}):`, error);
+        res.status(500).json({
+            message: `Error al obtener las programaciones: ${error.message}`,
+        });
     }
-  }
+}
 
   static async getProgramacionesPorSede(req, res) {
     const { sede } = req.params;
@@ -669,14 +661,14 @@ class ProgramacionCapaTallerController {
                     </div>
                     <div class="content">
                         <h2>Estimados ${correos.nombreCapacitador} y ${
-                          correos.nombreInstructor
-                        }.</h2>
+          correos.nombreInstructor
+        }.</h2>
                         <div class="details">
                             <p>El taller que fue programado para el <strong>${
                               correos.fecha
                             }</strong> a las <strong>${
-                              correos.horaInicio
-                            }</strong> ha sido cancelada.</p>
+          correos.horaInicio
+        }</strong> ha sido cancelada.</p>
                         </div>
                         <p>Si tienen alguna pregunta, no duden en contactarnos.</p>
                     </div>

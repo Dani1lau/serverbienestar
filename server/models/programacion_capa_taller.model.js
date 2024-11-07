@@ -64,18 +64,18 @@ class ProgramacionCapaTaller extends Model {
   }
 
   // Llamar al procedimiento almacenado para obtener la programación por ficha
-  static async getProgramacionPorFicha(ficha, cordinacion) {
+  static async getProgramacionPorFicha(ficha) {
     try {
+      // Ejecutar el procedimiento almacenado sin el parámetro de coordinación
       const programaciones = await sequelize.query(
-        "CALL ObtenerProgramacionPorFicha(:ficha, :cordinacion)",
+        "CALL ObtenerProgramacionPorFicha(:ficha)",
         {
-          replacements: { ficha, cordinacion },
-          type: sequelize.QueryTypes.SELECT,
+          replacements: { ficha },
         }
       );
 
       // Filtrar duplicados por 'fecha_procaptall' y 'horaInicio_procaptall'
-      return programaciones.filter(
+      const uniqueProgramaciones = programaciones.filter(
         (programacion, index, self) =>
           index ===
           self.findIndex(
@@ -84,6 +84,8 @@ class ProgramacionCapaTaller extends Model {
               p.horaInicio_procaptall === programacion.horaInicio_procaptall
           )
       );
+
+      return uniqueProgramaciones;
     } catch (error) {
       console.error("Error al ejecutar ObtenerProgramacionPorFicha:", error);
       throw error;
@@ -237,24 +239,24 @@ class ProgramacionCapaTaller extends Model {
 
   static async eliminarProgramacionCT(id_procaptall) {
     try {
-        // Ejecutar el procedimiento almacenado y obtener los correos junto con los detalles de la programación
-        const result = await sequelize.query(
-            `CALL sp_eliminarProgramacion(:id_procaptall)`, 
-            {
-                replacements: { id_procaptall }, // Paso de parámetros
-                type: sequelize.QueryTypes.SELECT // Definir el tipo de consulta
-            }
-        );
+      // Ejecutar el procedimiento almacenado y obtener los correos junto con los detalles de la programación
+      const result = await sequelize.query(
+        `CALL sp_eliminarProgramacion(:id_procaptall)`,
+        {
+          replacements: { id_procaptall }, // Paso de parámetros
+          type: sequelize.QueryTypes.SELECT, // Definir el tipo de consulta
+        }
+      );
 
-        // Devolver un resultado exitoso
-        return result[0];
+      // Devolver un resultado exitoso
+      return result[0];
     } catch (error) {
-        console.error(`Error al eliminar la programación y obtener los correos: ${error.message}`);
-        throw error;
+      console.error(
+        `Error al eliminar la programación y obtener los correos: ${error.message}`
+      );
+      throw error;
     }
-}
-
-
+  }
 }
 
 ProgramacionCapaTaller.init(
