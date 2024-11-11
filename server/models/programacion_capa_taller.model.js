@@ -284,25 +284,4 @@ ProgramacionCapaTaller.init(
   }
 );
 
-// Definir la asociación aquí
-ProgramacionCapaTaller.belongsTo(Capacitador, {
-  foreignKey: "id_CapacFK",
-  targetKey: "id_Capac",
-});
-
-// Función para obtener y mostrar la programación
-(async () => {
-  const ficha = 2902081;
-  const cordinacion = "Análisis y desarrollo de software";
-  try {
-    const programacion = await ProgramacionCapaTaller.getProgramacionPorFicha(
-      ficha,
-      cordinacion
-    );
-    console.log(programacion); // Aquí se mostrarán los datos obtenidos
-  } catch (error) {
-    console.error("Error al obtener programación:", error);
-  }
-})();
-
 export { ProgramacionCapaTaller };
