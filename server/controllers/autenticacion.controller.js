@@ -44,7 +44,7 @@ class AutenticacionController {
           .json({ message: "Correo electrónico no existe" });
       }
     } catch (error) {
-      res.status(500).json({ message: "Error al iniciar sesión: " + error });
+      res.status(500).json({ message: "Error al iniciar sesión lod: " + error });
     }
   }
 
