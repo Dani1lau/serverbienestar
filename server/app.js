@@ -33,6 +33,8 @@ app.use(cors());
 // Servir la carpeta 'uploads' como estática
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.use('/img', express.static(path.join(__dirname, 'img')));
+
 // Usar las rutas de la aplicación
 app.use(UsuarioRoutes);
 app.use(AdministradorRoutes);

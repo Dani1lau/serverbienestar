@@ -12,4 +12,15 @@ router.put('/api/programacion/:id', ProgramacionCapaTallerController.putPrograma
 router.post('/api/programacion', ProgramacionCapaTallerController.postProgramacionCT)
 router.delete( '/api/programacion/:id_procaptall',  ProgramacionCapaTallerController.deleteProgramacionCT )
 
+router.get('/api/sede52', ProgramacionCapaTallerController.obtenerProgramacionesSede52);
+router.get('/api/programaciones/sede64', ProgramacionCapaTallerController.obtenerProgramacionesSede64);
+router.get('/api/programaciones/sedeFontibon', ProgramacionCapaTallerController.obtenerProgramacionesSedeFontibon);
+
+
+// Ruta para obtener el informe
+router.post('/api/obtenerInforme', ProgramacionCapaTallerController.postObtenerInforme);
+
+// Ruta para generar el informe en PDF
+router.post('/api/generarInformePDF', ProgramacionCapaTallerController.postGenerarInformePDF);
+
 export default router;

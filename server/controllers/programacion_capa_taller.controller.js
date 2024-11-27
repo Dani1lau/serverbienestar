@@ -693,6 +693,107 @@ class ProgramacionCapaTallerController {
       res.status(500).json({ message: "Error al eliminar la programación" });
     }
   }
+
+  // Obtener el informe según los parámetros proporcionados
+  static async postObtenerInforme(req, res) {
+    const { fecha, sede, coordinacion, numeroFicha, ambiente } = req.body;
+
+    try {
+      const informe = await ProgramacionCapaTaller.getInforme(fecha, sede, coordinacion, numeroFicha, ambiente);
+
+      if (!informe) {
+        return res.status(404).json({
+          message: "No se encontraron informes para los datos proporcionados.",
+        });
+      }
+
+      res.status(200).json(informe);
+    } catch (error) {
+      console.error("Error al obtener el informe:", error.message);
+      res.status(500).json({
+        message: "Error en el servidor al obtener el informe.",
+        error: error.message,
+      });
+    }
+  }
+
+  // Generar el informe en PDF
+  static async postGenerarInformePDF(req, res) {
+    const { fecha, sede, coordinacion, numeroFicha, ambiente } = req.body;
+  
+    console.log("Datos recibidos del frontend:", req.body); // Verifica los datos enviados desde el frontend
+  
+    try {
+      // Obtener el informe usando los parámetros proporcionados
+      const informe = await ProgramacionCapaTaller.getInforme(fecha, sede, coordinacion, numeroFicha, ambiente);
+  
+      if (!informe) {
+        console.error("No se encontraron datos para generar el PDF");
+        return res.status(404).json({ message: "No se encontraron datos para generar el PDF." });
+      }
+  
+      console.log("Informe obtenido de la base de datos:", informe); // Asegúrate de que los datos sean correctos
+  
+      // Generar el PDF con los datos obtenidos
+      const pdfData = await ProgramacionCapaTaller.generarInformePDF(informe);
+  
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+      res.send(pdfData);
+    } catch (error) {
+      console.error("Error al generar el PDF: ", error);
+      res.status(500).json({ message: "Error en el servidor al generar el PDF.", error: error.stack });
+    }
+  } 
+
+  static async obtenerProgramacionesSede52(req, res) {
+    try {
+      const programaciones = await ProgramacionCapaTaller.getProgramacionesBySede52();
+      console.log("Datos devueltos al controlador:", programaciones); // Debug
+  
+      if (!programaciones || programaciones.length === 0) {
+        return res.status(404).json({ message: "No hay datos para la sede 52" });
+      }
+  
+      // Si deseas usar Object.values() para extraer solo los valores del primer objeto:
+      const Sede52 = Object.values(programaciones[0]);
+  
+      console.log("Datos procesados (solo valores):", Sede52); // Debug
+  
+      // Responde con los valores de la primera programación (si tienes más de una, puedes modificar esto)
+      res.status(200).json({ data: Sede52 });
+    } catch (error) {
+      console.error("Error en obtenerProgramacionesSede52:", error);
+      res.status(500).json({ message: "Error al obtener programaciones para la sede 52" });
+    }
+  }
+  
+  
+  
+  
+
+
+  static async obtenerProgramacionesSede64(req, res) {
+    try {
+      const programaciones = await ProgramacionCapaTaller.getProgramacionesBySede64();
+      res.status(200).json({ success: true, data: programaciones });
+    } catch (error) {
+      console.error('Error en obtenerProgramacionesSede64:', error);
+      res.status(500).json({ success: false, message: 'Error al obtener programaciones para la sede 64' });
+    }
+  }
+
+  static async obtenerProgramacionesSedeFontibon(req, res) {
+    try {
+      const programaciones = await ProgramacionCapaTaller.getProgramacionesBySedeFontibon();
+      res.status(200).json({ success: true, data: programaciones });
+    } catch (error) {
+      console.error('Error en obtenerProgramacionesSedeFontibon:', error);
+      res.status(500).json({ success: false, message: 'Error al obtener programaciones para la sede Fontibón' });
+    }
+  }
+
+
 }
 
 export default ProgramacionCapaTallerController;

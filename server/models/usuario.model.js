@@ -204,6 +204,11 @@ class Usuario extends Model {
     } = update_usuario;
 
     try {
+      // Validar datos antes de ejecutar
+      if (!["Masculino", "Femenino"].includes(genero)) {
+        throw new Error('El género debe ser "Masculino" o "Femenino"');
+      }
+
       // Si se proporciona una nueva clave, encríptala
       let hashedClave = null;
       if (clave_Usua) {
@@ -215,14 +220,14 @@ class Usuario extends Model {
         `CALL actualizarUsuario(:p_id_Usua, :p_nombre, :p_apellido, :p_correo, :p_clave, :p_estado, :p_genero, :p_id_Rol)`,
         {
           replacements: {
-            p_id_Usua: id_Usuario,
+            p_id_Usua: parseInt(id_Usuario, 10),
             p_nombre: nombre,
             p_apellido: apellido,
             p_correo: correo_Usua,
             p_clave: hashedClave || null, // Utiliza la clave encriptada o null si no se proporciona
-            p_estado: estado, // Asegúrate de pasar el estado
+            p_estado: estado ? 1 : 0, // Asegúrate de pasar el estado como 1 o 0
             p_genero: genero,
-            p_id_Rol: id_Rol1FK,
+            p_id_Rol: parseInt(id_Rol1FK, 10),
           },
         }
       );
@@ -261,7 +266,5 @@ Usuario.init(
     underscored: false,
   }
 );
-
-
 
 export { Usuario };

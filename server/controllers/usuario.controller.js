@@ -82,6 +82,7 @@ class UsuarioController {
         id_Rol1FK,
         estado,
       } = req.body;
+
       const id_Usuario = req.params.id_Usuario;
 
       // Validar que todos los parámetros necesarios estén presentes
@@ -96,6 +97,24 @@ class UsuarioController {
         return res
           .status(400)
           .json({ message: "Faltan parámetros necesarios." });
+      }
+
+      // Validar longitudes y valores de entrada
+      if (nombre.length > 40) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "El nombre excede la longitud máxima permitida (40 caracteres).",
+          });
+      }
+      if (correo_Usua.length > 35) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "El correo excede la longitud máxima permitida (35 caracteres).",
+          });
       }
 
       // Crear el objeto de usuario a actualizar
@@ -166,8 +185,8 @@ class UsuarioController {
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-          user: process.env.GMAIL_USER="soydanielra@gmail.com",
-          pass: process.env.GMAIL_PASS="abgo fbls snjb pmuj",
+          user: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
+          pass: (process.env.GMAIL_PASS = "abgo fbls snjb pmuj"),
         },
         tls: {
           rejectUnauthorized: false,
@@ -179,7 +198,7 @@ class UsuarioController {
 
       // Configurar el contenido del correo
       const mailOptions = {
-        from: process.env.GMAIL_USER="soydanielra@gmail.com",
+        from: (process.env.GMAIL_USER = "soydanielra@gmail.com"),
         to: correo,
         subject: "Bienvenido a la plataforma",
         html: `
